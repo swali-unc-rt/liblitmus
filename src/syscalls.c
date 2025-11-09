@@ -72,6 +72,17 @@ int litmus_unlock(int od)
 	return litmus_syscall(LRT_litmus_unlock, od);
 }
 
+int litmus_smlp_gpu_done(int od) {
+	return litmus_syscall(LRT_smlp_gpu_done, od);
+}
+
+int litmus_lock_arg(int od, void* arg) {
+	union litmus_syscall_args args;
+	args.lock_arg.lock_od = od;
+	args.lock_arg.arg = arg;
+	return litmus_syscall(LRT_litmus_lock_arg, (unsigned long) &args);
+}
+
 int get_job_no(unsigned int *job_no)
 {
 	struct control_page* cp = get_ctrl_page();

@@ -178,6 +178,8 @@ typedef enum  {
 	DPCP_SEM	= 4, /**< Distributed Priority Ceiling Protocol */
 	PCP_SEM		= 5, /**< Priority Ceiling Protocol */
 	DFLP_SEM	= 6, /**< Distributed FIFO Locking Protocol */
+	OMLP_SEM = 7, // O(m) Locking Protocol
+	SMLP_SEM = 8, // SMLP
 } obj_type_t;
 
 /**
@@ -239,6 +241,12 @@ int litmus_lock(int od);
  * @return 0 iff the lock was released successfully
  */
 int litmus_unlock(int od);
+
+// Obtain a lock with an additional arguement
+int litmus_lock_arg(int od, void* arg);
+
+// Explicit notification of GPU completion for SMLP locks (only when specified)
+int litmus_smlp_gpu_done(int od);
 
 /***** job control *****/
 /**
@@ -451,6 +459,44 @@ static inline int open_dpcp_sem(int fd, int name, int cpu)
 static inline int open_dflp_sem(int fd, int name, int cpu)
 {
 	return od_openx(fd, DFLP_SEM, name, &cpu);
+}
+
+static inline int open_omlp_sem(int fd, int name) {
+	return od_open(fd, OMLP_SEM, name);
+}
+
+struct smlp_create_config {
+    // Initial mask to assign
+    // If bit n is set, then TPC n is up for grabs
+    uint64_t init_mask;
+    // If set, then you don't move to PIQ until explicitly calling LRT_smlp_gpu_done
+    int explicit_gpu_finish;
+};
+
+static inline int open_smlp_sem(int fd, int name, uint64_t init_mask, int explicit_gpu_finish) {
+	struct smlp_create_config config;
+	config.init_mask = init_mask;
+	config.explicit_gpu_finish = explicit_gpu_finish;
+	return od_openx(fd, SMLP_SEM, name, &config);
+}
+
+struct smlp_lock_arg {
+    // Allowed number of TPCs. If bit x is set, then x TPCs are allowed
+    uint64_t allowed_tpc_bits;
+    uint64_t assigned_mask;
+};
+
+static inline int litmus_smlp_lock(int od, uint64_t allowed_tpc_bits, uint64_t *assigned_mask) {
+	struct smlp_lock_arg arg;
+	arg.allowed_tpc_bits = allowed_tpc_bits;
+	int ret = litmus_lock_arg(od, &arg);
+	if (ret == 0)
+		*assigned_mask = arg.assigned_mask;
+	return ret;
+}
+
+static inline int litmus_smlp_unlock(int od) {
+	return litmus_unlock(od);
 }
 
 /**
