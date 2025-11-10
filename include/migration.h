@@ -10,7 +10,7 @@ typedef int pid_t;
  * obtain the PID of a thread (TID)
  * @return The PID of a thread
  */
-pid_t gettid();
+pid_t litmus_gettid();
 
 /**
  * Migrate and assign a task to a given CPU

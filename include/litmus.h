@@ -488,8 +488,9 @@ struct smlp_lock_arg {
 
 static inline int litmus_smlp_lock(int od, uint64_t allowed_tpc_bits, uint64_t *assigned_mask) {
 	struct smlp_lock_arg arg;
+	int ret;
 	arg.allowed_tpc_bits = allowed_tpc_bits;
-	int ret = litmus_lock_arg(od, &arg);
+	ret = litmus_lock_arg(od, &arg);
 	if (ret == 0)
 		*assigned_mask = arg.assigned_mask;
 	return ret;

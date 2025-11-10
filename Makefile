@@ -20,7 +20,7 @@ LITMUS_KERNEL ?= ../litmus-rt
 
 # compiler flags
 flags-debug    = -O2 -Wall -Werror -g -Wdeclaration-after-statement
-flags-api      = -D_XOPEN_SOURCE=600 -D_GNU_SOURCE
+flags-api      = -D_XOPEN_SOURCE=600 -D_GNU_SOURCE -DCONFIG_LITMUS_LOCKING_SMLP -DCONFIG_LITMUS_LOCKING_WITHARGS
 
 # architecture-specific flags
 flags-i386     = -m32

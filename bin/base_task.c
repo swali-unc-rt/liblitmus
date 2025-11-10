@@ -114,7 +114,7 @@ int main(int argc, char** argv)
 	 * where CPU ranges from 0 to "Number of CPUs" - 1 before calling
 	 * set_rt_task_param().
 	 */
-	CALL( set_rt_task_param(gettid(), &param) );
+	CALL( set_rt_task_param(litmus_gettid(), &param) );
 
 
 	/*****

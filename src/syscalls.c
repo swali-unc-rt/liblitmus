@@ -13,7 +13,7 @@
 
 /*	Syscall stub for setting RT mode and scheduling options */
 
-pid_t gettid(void)
+pid_t litmus_gettid(void)
 {
 	return syscall(__NR_gettid);
 }

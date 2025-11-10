@@ -130,7 +130,7 @@ int sporadic_global(lt_t e_ns, lt_t p_ns)
 	param.exec_cost = e_ns;
 	param.period = p_ns;
 
-	return set_rt_task_param(gettid(), &param);
+	return set_rt_task_param(litmus_gettid(), &param);
 }
 
 int sporadic_partitioned(lt_t e_ns, lt_t p_ns, int partition)
@@ -148,7 +148,7 @@ int sporadic_partitioned(lt_t e_ns, lt_t p_ns, int partition)
 	param.period = p_ns;
 	param.cpu = domain_to_first_cpu(partition);
 
-	return set_rt_task_param(gettid(), &param);
+	return set_rt_task_param(litmus_gettid(), &param);
 }
 
 int sporadic_clustered(lt_t e_ns, lt_t p_ns, int cluster)
@@ -166,7 +166,7 @@ int sporadic_clustered(lt_t e_ns, lt_t p_ns, int cluster)
 	param.period = p_ns;
 	param.cpu = domain_to_first_cpu(cluster);
 
-	return set_rt_task_param(gettid(), &param);
+	return set_rt_task_param(litmus_gettid(), &param);
 }
 
 int init_kernel_iface(void);

@@ -157,7 +157,7 @@ void* rt_thread(void *tcontext)
 	 * where CPU ranges from 0 to "Number of CPUs" - 1 before calling
 	 * set_rt_task_param().
 	 */
-	CALL( set_rt_task_param(gettid(), &param) );
+	CALL( set_rt_task_param(litmus_gettid(), &param) );
 
 	/*****
 	 * 2) Transition to real-time mode.
