@@ -71,7 +71,14 @@ int litmus_open_lock(
 	return od;
 }
 
-
+#ifdef CONFIG_LITMUS_LOCKING_SMLP
+int open_smlp_sem(int lock_id, const char* od_namespace, uint64_t init_mask, int explicit_gpu_finish) {
+	struct smlp_create_config config;
+	config.init_mask = init_mask;
+	config.explicit_gpu_finish = explicit_gpu_finish;
+	return litmus_open_lock( SMLP_SEM, lock_id, od_namespace, &config);
+}
+#endif
 
 void show_rt_param(struct rt_task* tp)
 {

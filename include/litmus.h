@@ -169,17 +169,36 @@ int sporadic_clustered(lt_t e_ns, lt_t p_ns, int cluster);
 /**
  * Locking protocols for allocated shared objects
  */
+// typedef enum  {
+// 	FMLP_SEM	= 0, /**< Fifo-based Multiprocessor Locking Protocol */
+// 	SRP_SEM		= 1, /**< Stack Resource Protocol */
+// 	MPCP_SEM	= 2, /**< Multiprocessor Priority Ceiling Protocol */
+// 	MPCP_VS_SEM	= 3, /**< Multiprocessor Priority Ceiling Protocol with
+// 						  Virtual Spinning */
+// 	DPCP_SEM	= 4, /**< Distributed Priority Ceiling Protocol */
+// 	PCP_SEM		= 5, /**< Priority Ceiling Protocol */
+// 	DFLP_SEM	= 6, /**< Distributed FIFO Locking Protocol */
+// 	OMLP_SEM = 7, // O(m) Locking Protocol
+// 	SMLP_SEM = 8, // SMLP
+// } obj_type_t;
 typedef enum  {
-	FMLP_SEM	= 0, /**< Fifo-based Multiprocessor Locking Protocol */
-	SRP_SEM		= 1, /**< Stack Resource Protocol */
-	MPCP_SEM	= 2, /**< Multiprocessor Priority Ceiling Protocol */
-	MPCP_VS_SEM	= 3, /**< Multiprocessor Priority Ceiling Protocol with
-						  Virtual Spinning */
-	DPCP_SEM	= 4, /**< Distributed Priority Ceiling Protocol */
-	PCP_SEM		= 5, /**< Priority Ceiling Protocol */
-	DFLP_SEM	= 6, /**< Distributed FIFO Locking Protocol */
-	OMLP_SEM = 7, // O(m) Locking Protocol
-	SMLP_SEM = 8, // SMLP
+	FMLP_SEM	= 0,
+	SRP_SEM,
+
+	MPCP_SEM,
+	MPCP_VS_SEM,
+	DPCP_SEM,
+	PCP_SEM,
+
+	DFLP_SEM,
+
+#ifdef CONFIG_LITMUS_LOCKING_OMLP
+	OMLP_SEM,
+#endif
+#ifdef CONFIG_LITMUS_LOCKING_SMLP
+	SMLP_SEM,
+#endif
+	MAX_OBJ_TYPE,
 } obj_type_t;
 
 /**
@@ -242,11 +261,15 @@ int litmus_lock(int od);
  */
 int litmus_unlock(int od);
 
+#ifdef CONFIG_LITMUS_LOCKING_WITHARGS
 // Obtain a lock with an additional arguement
 int litmus_lock_arg(int od, void* arg);
+#endif
 
+#ifdef CONFIG_LITMUS_LOCKING_SMLP
 // Explicit notification of GPU completion for SMLP locks (only when specified)
 int litmus_smlp_gpu_done(int od);
+#endif
 
 /***** job control *****/
 /**
@@ -461,10 +484,13 @@ static inline int open_dflp_sem(int fd, int name, int cpu)
 	return od_openx(fd, DFLP_SEM, name, &cpu);
 }
 
+#ifdef CONFIG_LITMUS_LOCKING_OMLP
 static inline int open_omlp_sem(int fd, int name) {
 	return od_open(fd, OMLP_SEM, name);
 }
+#endif
 
+#ifdef CONFIG_LITMUS_LOCKING_SMLP
 struct smlp_create_config {
     // Initial mask to assign
     // If bit n is set, then TPC n is up for grabs
@@ -473,12 +499,7 @@ struct smlp_create_config {
     int explicit_gpu_finish;
 };
 
-static inline int open_smlp_sem(int fd, int name, uint64_t init_mask, int explicit_gpu_finish) {
-	struct smlp_create_config config;
-	config.init_mask = init_mask;
-	config.explicit_gpu_finish = explicit_gpu_finish;
-	return od_openx(fd, SMLP_SEM, name, &config);
-}
+int open_smlp_sem(int lock_id, const char* od_namespace, uint64_t init_mask, int explicit_gpu_finish);
 
 struct smlp_lock_arg {
     // Allowed number of TPCs. If bit x is set, then x TPCs are allowed
@@ -486,19 +507,12 @@ struct smlp_lock_arg {
     uint64_t assigned_mask;
 };
 
-static inline int litmus_smlp_lock(int od, uint64_t allowed_tpc_bits, uint64_t *assigned_mask) {
-	struct smlp_lock_arg arg;
-	int ret;
-	arg.allowed_tpc_bits = allowed_tpc_bits;
-	ret = litmus_lock_arg(od, &arg);
-	if (ret == 0)
-		*assigned_mask = arg.assigned_mask;
-	return ret;
-}
+int litmus_smlp_lock(int od, uint64_t allowed_tpc_bits, uint64_t *assigned_mask);
 
 static inline int litmus_smlp_unlock(int od) {
 	return litmus_unlock(od);
 }
+#endif
 
 /**
  * Get budget information from the scheduler (in nanoseconds).

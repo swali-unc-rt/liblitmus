@@ -72,16 +72,30 @@ int litmus_unlock(int od)
 	return litmus_syscall(LRT_litmus_unlock, od);
 }
 
+#ifdef CONFIG_LITMUS_LOCKING_SMLP
 int litmus_smlp_gpu_done(int od) {
 	return litmus_syscall(LRT_smlp_gpu_done, od);
 }
 
+int litmus_smlp_lock(int od, uint64_t allowed_tpc_bits, uint64_t *assigned_mask) {
+	struct smlp_lock_arg arg;
+	int ret;
+	arg.allowed_tpc_bits = allowed_tpc_bits;
+	ret = litmus_lock_arg(od, &arg);
+	if (ret == 0)
+		*assigned_mask = arg.assigned_mask;
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_LITMUS_LOCKING_WITHARGS
 int litmus_lock_arg(int od, void* arg) {
 	union litmus_syscall_args args;
 	args.lock_arg.lock_od = od;
 	args.lock_arg.arg = arg;
 	return litmus_syscall(LRT_litmus_lock_arg, (unsigned long) &args);
 }
+#endif
 
 int get_job_no(unsigned int *job_no)
 {

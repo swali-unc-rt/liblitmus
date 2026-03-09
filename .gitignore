@@ -28,6 +28,7 @@ cycles
 measure_syscall
 uncache
 resctrl
+resctl
 
 # build system files
 .config
