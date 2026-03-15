@@ -271,6 +271,26 @@ int litmus_lock_arg(int od, void* arg);
 int litmus_smlp_gpu_done(int od);
 #endif
 
+#ifdef CONFIG_LITMUS_ENABLE_RELEASEGROUPS
+// Release groups, create a group
+int litmus_releasegroup_create(unsigned int rgroupid);
+
+// Release groups, release a group
+int litmus_releasegroup_release(unsigned int rgroupid);
+
+// Add ourselves to a release group
+int litmus_releasegroup_addtask(unsigned int rgroupid);
+
+// Remove ourselves from a release group
+int litmus_releasegroup_remove(void);
+
+// Init the release group environment
+int litmus_releasegroup_envinit(void);
+
+// Destroy the release group environment
+int litmus_releasegroup_envdestroy(void);
+#endif
+
 /***** job control *****/
 /**
  * @todo Doxygen

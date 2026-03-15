@@ -137,3 +137,37 @@ int get_current_budget(
 	args.get_current_budget.remaining = remaining;
 	return litmus_syscall(LRT_get_current_budget, (unsigned long) &args);
 }
+
+#ifdef CONFIG_LITMUS_ENABLE_RELEASEGROUPS
+int litmus_releasegroup_create(unsigned int rgroupid) {
+	union litmus_syscall_args args;
+	args.releasegroup_arg.releasegroup_id = rgroupid;
+	return litmus_syscall(LRT_releasegroup_create, (unsigned long) &args);
+}
+
+int litmus_releasegroup_release(unsigned int rgroupid) {
+	union litmus_syscall_args args;
+	args.releasegroup_arg.releasegroup_id = rgroupid;
+	return litmus_syscall(LRT_releasegroup_release, (unsigned long) &args);
+}
+
+int litmus_releasegroup_addtask(unsigned int rgroupid) {
+	union litmus_syscall_args args;
+	args.releasegroup_arg.releasegroup_id = rgroupid;
+	return litmus_syscall(LRT_releasegroup_addtask, (unsigned long) &args);
+}
+
+int litmus_releasegroup_remove(void) {
+	return litmus_syscall(LRT_releasegroup_remove, 0);
+}
+
+// Init the release group environment
+int litmus_releasegroup_envinit(void) {
+	return litmus_syscall(LRT_releasegroup_envinit, 0);
+}
+
+// Destroy the release group environment
+int litmus_releasegroup_envdestroy(void) {
+	return litmus_syscall(LRT_releasegroup_envdestroy, 0);
+}
+#endif

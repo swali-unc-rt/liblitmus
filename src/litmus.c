@@ -113,6 +113,9 @@ void init_rt_task_param(struct rt_task* tp)
 	tp->priority = LITMUS_LOWEST_PRIORITY;
 	tp->budget_policy = NO_ENFORCEMENT;
 	tp->release_policy = TASK_SPORADIC;
+#ifdef CONFIG_LITMUS_ENABLE_RELEASEGROUPS
+	tp->releasegroup_id = 0; // By default, don't join a release group
+#endif
 }
 
 task_class_t str2class(const char* str)
