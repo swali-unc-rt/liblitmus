@@ -80,8 +80,10 @@ const char *usage_msg =
 	"    -E MIN-DELTA      set minimum inter-arrival delay to MIN-DELTA [default: period]\n"
 	"\n"
 	"    -X PROTOCOL       access a shared resource protected by a locking protocol\n"
+	"    -x SMLP-INITMASK  If the resource is SMLP, immediately followed by init mask (decimal)\n"
 	"    -L CS-LENGTH      simulate a critical section length of CS-LENGTH milliseconds\n"
 	"    -Q RESOURCE-ID    access the resource identified by RESOURCE-ID\n"
+	"    -M SMLP LOCK MASK If the SMLP, then mask (decimal) after the resource id.\n"
 	"\n"
 	"Units:\n"
 	"    WCET and PERIOD are expected in milliseconds.\n"
@@ -111,6 +113,7 @@ static int page_size;
 static void *base = NULL;
 
 static int cycles_ms = 0;
+unsigned long smlp_lock_mask = 0;
 
 static noinline int loop(int count)
 {
@@ -310,10 +313,22 @@ static void job(double exec_time, double program_end, int lock_od, double cs_len
 		/* non-critical section */
 		loop_for(chunk1, program_end + 1);
 
+		int rv;
 		/* critical section */
-		litmus_lock(lock_od);
+		if( smlp_lock_mask ) {
+			uint64_t assigned_mask;
+			rv = litmus_smlp_lock(lock_od, smlp_lock_mask, &assigned_mask);
+		}
+		else
+			rv = litmus_lock(lock_od);
+		if( rv )
+			printf("lock error: %d\n", rv);
 		loop_for(cs_length, program_end + 1);
-		litmus_unlock(lock_od);
+		if( smlp_lock_mask )
+			litmus_smlp_gpu_done(lock_od);
+		rv = litmus_unlock(lock_od);
+		if( rv )
+			printf("unlock error: %d\n", rv);
 
 		/* non-critical section */
 		loop_for(chunk2, program_end + 2);
@@ -336,7 +351,7 @@ static lt_t choose_inter_arrival_time_ns(
 	return ms2ns(iat_ms);
 }
 
-#define OPTSTR "p:c:wlveo:s:m:q:r:X:L:Q:iRu:U:Bhd:C:S::O::TD:E:A:a:"
+#define OPTSTR "p:c:wlveo:s:m:q:r:X:L:Q:iRu:U:Bhd:C:S::O::TD:E:A:a:M:x:"
 
 int main(int argc, char** argv)
 {
@@ -402,6 +417,7 @@ int main(int argc, char** argv)
 	const char *lock_namespace = "./rtspin-locks";
 	int protocol = -1;
 	double cs_length = 1; /* millisecond */
+	unsigned long smlp_init_mask = 0;
 
 	progname = argv[0];
 
@@ -523,12 +539,17 @@ int main(int argc, char** argv)
 			if (protocol < 0)
 				usage("Unknown locking protocol specified.");
 			break;
+		case 'x':
+			smlp_init_mask = want_positive_int(optarg, "-x");
+			break;
 		case 'L':
 			cs_length = want_positive_double(optarg, "-L");
 			break;
 		case 'Q':
 			resource_id = want_non_negative_int(optarg, "-Q");
-
+			break;
+		case 'M':
+			smlp_lock_mask = want_positive_int(optarg, "-M");
 			break;
 		case 'v':
 			verbose = 1;
@@ -573,6 +594,13 @@ int main(int argc, char** argv)
 		/* touch every allocated page */
 		for(idx = 0; idx < nr_of_pages; idx++)
 				memset(base + (idx * page_size), 1, page_size);
+	}
+
+	if( protocol == SMLP_SEM ) {
+		if( !smlp_init_mask )
+			usage("SMLP protocol requires a non-zero init mask argument (specify with -X SMLP init-mask).");
+		if( !smlp_lock_mask )
+			usage("SMLP protocol requires a non-zero lock mask argument (specify with -Q resource-id lock-mask).");
 	}
 
 	srand(getpid());
@@ -702,12 +730,18 @@ int main(int argc, char** argv)
 
 	if (protocol >= 0) {
 		/* open reference to semaphore */
-		lock_od = litmus_open_lock(protocol, resource_id, lock_namespace, &cluster);
+		if( protocol == SMLP_SEM ) {
+			lock_od = open_smlp_sem( resource_id, lock_namespace, smlp_init_mask, 1 );
+		} else {
+			lock_od = litmus_open_lock(protocol, resource_id, lock_namespace, &cluster);
+		}
+
 		if (lock_od < 0) {
 			perror("litmus_open_lock");
 			usage("Could not open lock.");
 		}
-	}
+	} else if( verbose )
+		fprintf(stderr, "No locking protocol specified; not accessing any shared resources.\n");
 
 
 	if (wait) {
@@ -779,6 +813,17 @@ int main(int argc, char** argv)
 				        "; delta: %" PRIu64 "\n",
 				       irq, irq - last_irq_count);
 				last_irq_count = irq;
+			}
+			if( lock_od >= 0 ) {
+				if( protocol == SMLP_SEM ) {
+					fprintf(stderr, "\taccessing SMLP semaphore %d with init mask %lu and lock mask %lu\n",
+						resource_id, smlp_init_mask, smlp_lock_mask);
+				} else {
+					fprintf(stderr, "\taccessing resource %d with protocol %d\n",
+						resource_id, protocol );
+				}
+			} else {
+				fprintf(stderr, "\tno locking protocol specified\n");
 			}
 		}
 
