@@ -304,6 +304,7 @@ static int generate_output(int output_fd)
 static void job(double exec_time, double program_end, int lock_od, double cs_length)
 {
 	double chunk1, chunk2;
+	int rv;
 
 	if (lock_od >= 0) {
 		/* simulate critical section somewhere in the middle */
@@ -313,7 +314,6 @@ static void job(double exec_time, double program_end, int lock_od, double cs_len
 		/* non-critical section */
 		loop_for(chunk1, program_end + 1);
 
-		int rv;
 		/* critical section */
 		if( smlp_lock_mask ) {
 			uint64_t assigned_mask;
