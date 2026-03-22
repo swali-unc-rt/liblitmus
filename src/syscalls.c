@@ -170,4 +170,14 @@ int litmus_releasegroup_envinit(void) {
 int litmus_releasegroup_envdestroy(void) {
 	return litmus_syscall(LRT_releasegroup_envdestroy, 0);
 }
+
+int litmus_releasegroup_cache(unsigned int rgroupid) {
+	union litmus_syscall_args args;
+	args.releasegroup_arg.releasegroup_id = rgroupid;
+	return litmus_syscall(LRT_releasegroup_cache, (unsigned long) &args);
+}
+
+int litmus_releasegroup_release_cached(void) {
+	return litmus_syscall(LRT_releasegroup_release_cached, 0);
+}
 #endif

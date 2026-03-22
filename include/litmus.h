@@ -275,7 +275,7 @@ int litmus_smlp_gpu_done(int od);
 // Release groups, create a group
 int litmus_releasegroup_create(unsigned int rgroupid);
 
-// Release groups, release a group
+// Release groups, release a group (slow, do cached releases for faster release)
 int litmus_releasegroup_release(unsigned int rgroupid);
 
 // Add ourselves to a release group
@@ -289,6 +289,12 @@ int litmus_releasegroup_envinit(void);
 
 // Destroy the release group environment
 int litmus_releasegroup_envdestroy(void);
+
+// Cache a release group to speed up future releases
+int litmus_releasegroup_cache(unsigned int rgroupid);
+
+// Release the cached release group (speedy)
+int litmus_releasegroup_release_cached(void);
 #endif
 
 /***** job control *****/
